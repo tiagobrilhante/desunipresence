@@ -65,7 +65,7 @@ export class ProfileService {
 
   async getCurrentUserProfile(userId?: string) {
     let currentUserId = userId
-    
+
     if (!currentUserId) {
       // Obter usuário atual do Supabase diretamente
       const { data: { user } } = await this.supabase.auth.getUser()
@@ -103,7 +103,7 @@ export class ProfileService {
 
   async updateCurrentUserProfile(profileData: UpdateProfileData, userId?: string) {
     let currentUserId = userId
-    
+
     if (!currentUserId) {
       // Obter usuário atual do Supabase diretamente
       const { data: { user } } = await this.supabase.auth.getUser()

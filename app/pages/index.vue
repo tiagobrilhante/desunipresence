@@ -2,7 +2,6 @@
 import * as z from 'zod'
 import type { FormSubmitEvent, AuthFormField } from '@nuxt/ui'
 import type { Provider } from '@supabase/supabase-js'
-import NavBar from '~/layouts/components/NavBar.vue'
 
 definePageMeta({
   layout: 'unauthenticated'
@@ -32,7 +31,7 @@ const providers = [{
 }]
 
 const schema = z.object({
-  email: z.string().email('Email inválido'),
+  email: z.email('Email inválido'),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres')
 })
 
@@ -47,10 +46,10 @@ async function handleProviderLogin(provider: Provider) {
     toast.add({
       title: 'Não foi possível entrar',
       description: error.message,
-      color: 'red'
+      color: 'error'
     })
   }
-}NavBar
+}
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
   const { error } = await login(payload.data)
@@ -59,7 +58,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     toast.add({
       title: 'Credenciais inválidas',
       description: error.message,
-      color: 'red'
+      color: 'error'
     })
     return
   }
@@ -67,7 +66,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   toast.add({
     title: 'Bem-vindo(a) de volta!',
     description: 'Login realizado com sucesso.',
-    color: 'green'
+    color: 'primary'
   })
 
   await navigateTo('/home')

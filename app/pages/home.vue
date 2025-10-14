@@ -9,8 +9,9 @@ const profilesStore = useProfilesStore()
 const { fetchUserGroups } = useGroups()
 
 // Buscar perfil do usuário atual
+const { getMyProfile } = useProfile()
 const currentProfile = computed(() => {
-  return user.value?.id ? profilesStore.getProfile(user.value.id) : null
+  return getMyProfile()
 })
 
 // Estado reativo para os memberships

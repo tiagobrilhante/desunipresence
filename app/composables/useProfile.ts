@@ -10,8 +10,8 @@ export const useProfile = () => {
   const supabase = useSupabaseClient<Database>()
   const profileService = new ProfileService(supabase)
 
-  // Buscar perfil atual do usuário (com cache inteligente)
-  const fetchCurrentUserProfile = async (userId?: string): Promise<Profile | null> => {
+  // Buscar MEU perfil (perfil do usuário logado)
+  const fetchMyProfile = async (userId?: string): Promise<Profile | null> => {
     const user = useSupabaseUser()
     const currentUserId = userId || user.value?.id
 
@@ -20,8 +20,8 @@ export const useProfile = () => {
     }
 
     // Verifica cache primeiro
-    const cached = profilesStore.getProfile(currentUserId)
-    if (cached) {
+    const cached = profilesStore.getMyProfile()
+    if (cached && cached.id === currentUserId) {
       return cached
     }
 
@@ -32,19 +32,22 @@ export const useProfile = () => {
       const data = await profileService.getCurrentUserProfile(userId)
 
       if (data) {
-        profilesStore.setProfile(data)
+        profilesStore.setMyProfile(data)
       }
 
       return data
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar perfil do usuário'
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar meu perfil'
       profilesStore.setError(errorMessage)
-      console.error('Error fetching current user profile:', error)
+      console.error('Error fetching my profile:', error)
       throw error
     } finally {
       profilesStore.setLoading(false)
     }
   }
+
+  // Alias para manter compatibilidade
+  const fetchCurrentUserProfile = fetchMyProfile
 
   // Buscar perfil por ID (com cache inteligente)
   const fetchProfile = async (id: string): Promise<Profile | null> => {
@@ -269,7 +272,8 @@ export const useProfile = () => {
 
   return {
     // Actions
-    fetchCurrentUserProfile,
+    fetchMyProfile,
+    fetchCurrentUserProfile, // Alias para compatibilidade
     fetchProfile,
     fetchProfileByColumn,
     fetchProfiles,
@@ -282,11 +286,13 @@ export const useProfile = () => {
     refreshProfile,
 
     // State (readonly)
-    profiles: profilesStore.items,
+    myProfile: profilesStore.myProfile,
+    otherProfiles: profilesStore.otherProfiles,
     loading: profilesStore.loading,
     error: profilesStore.error,
 
     // Getters
+    getMyProfile: profilesStore.getMyProfile,
     getProfile: profilesStore.getProfile,
     getProfileByUsername: profilesStore.getProfileByUsername,
     getProfilesByIds: profilesStore.getProfilesByIds,

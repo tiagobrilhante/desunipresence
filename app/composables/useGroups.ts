@@ -24,15 +24,15 @@ export const useGroups = () => {
     try {
       groupsStore.setLoading(true)
       groupsStore.setError(null)
-      
+
       const memberships = await groupService.getGroups(userId)
-      
+
       if (memberships) {
         // Extrair apenas os grupos para o store (mantém compatibilidade)
         const groups = memberships.map(membership => membership.groups)
         groupsStore.setGroups(groups)
       }
-      
+
       return memberships || []
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar grupos'
@@ -53,13 +53,13 @@ export const useGroups = () => {
     try {
       groupsStore.setLoading(true)
       groupsStore.setError(null)
-      
+
       const data = await groupService.getGroupById(id)
-      
+
       if (data) {
         groupsStore.setGroup(data)
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar grupo'
@@ -76,14 +76,14 @@ export const useGroups = () => {
     try {
       groupsStore.setLoading(true)
       groupsStore.setError(null)
-      
+
       const data = await groupService.createGroup(groupData)
-      
+
       if (data) {
         groupsStore.setGroup(data)
         // TODO: Aqui podemos adicionar notificações, logs, etc.
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar grupo'
@@ -100,14 +100,14 @@ export const useGroups = () => {
     try {
       groupsStore.setLoading(true)
       groupsStore.setError(null)
-      
+
       const data = await groupService.updateGroup(id, groupData)
-      
+
       if (data) {
         groupsStore.setGroup(data)
         // TODO: Adicionar notificação de sucesso
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar grupo'
@@ -124,12 +124,12 @@ export const useGroups = () => {
     try {
       groupsStore.setLoading(true)
       groupsStore.setError(null)
-      
+
       await groupService.deleteGroup(id)
-      
+
       groupsStore.removeGroup(id)
       // TODO: Adicionar notificação de sucesso
-      
+
       return true
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao deletar grupo'
@@ -168,12 +168,12 @@ export const useGroups = () => {
     deleteGroup,
     refreshUserGroups,
     refreshGroup,
-    
+
     // State (readonly)
     groups: groupsStore.items,
     loading: groupsStore.loading,
     error: groupsStore.error,
-    
+
     // Getters
     getGroup: groupsStore.getGroup,
     getUserGroups: groupsStore.getUserGroups

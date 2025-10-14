@@ -30,12 +30,14 @@ export const useAuth = () => {
     }
 
     try {
-      await fetchCurrentUserProfile(user.id)
-      
+      // Buscar meu perfil e salvar como myProfile
+      const { fetchMyProfile } = useProfile()
+      await fetchMyProfile(user.id)
+
       // Limpar cache e recarregar dados após login
       const groupsStore = useGroupsStore()
       groupsStore.clearAll()
-      
+
       // Buscar dados frescos do servidor
       const { fetchUserGroups } = useGroups()
       await fetchUserGroups()
@@ -97,14 +99,14 @@ export const useAuth = () => {
   const logout = async () => {
     try {
       await withLoading(() => authService.logout())
-      
+
       // Limpar todos os stores ao fazer logout
       const groupsStore = useGroupsStore()
       const profilesStore = useProfilesStore()
-      
+
       groupsStore.clearAll()
       profilesStore.clearAll()
-      
+
       return { success: true as const, error: null as AuthError | null }
     } catch (error) {
       console.error(error)

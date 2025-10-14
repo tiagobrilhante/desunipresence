@@ -1,0 +1,183 @@
+<script setup lang="ts">
+// Importar tipo do grupo
+import type { Database } from '~/types/database.types'
+
+definePageMeta({
+  layout: 'authenticated'
+})
+
+const route = useRoute()
+const groupsStore = useGroupsStore()
+const { fetchGroup } = useGroups()
+const toast = useToast()
+
+// Pegar o ID da URL
+const groupId = route.params.id as string
+
+type Group = Database['public']['Tables']['groups']['Row']
+
+// Buscar dados do grupo
+const group = ref<Group | null>(null)
+const loading = ref(true)
+const checkBadge = ref(false)
+const showCode = ref(false)
+const copied = ref(false)
+
+const { myProfile } = useProfile()
+
+// Função para copiar código
+const copyCode = async () => {
+  copied.value = true
+
+  if (group.value?.code) {
+    try {
+      await navigator.clipboard.writeText(group.value.code)
+      console.log('Código copiado!')
+
+      toast.add({
+        title: 'Código copiado!',
+        icon: 'i-lucide-check',
+        ui: {
+          root: 'dark:bg-neutral-900'
+        }
+      })
+
+      setTimeout(() => {
+        copied.value = false
+      }, 5000)
+    } catch (error) {
+      console.error('Erro ao copiar código:', error)
+    }
+  }
+}
+
+// Toggle da visibilidade do código
+const toggleCodeVisibility = () => {
+  showCode.value = !showCode.value
+}
+
+onMounted(async () => {
+  try {
+    // Buscar grupo do servidor
+    const groupData = await fetchGroup(groupId)
+
+    if (groupData && myProfile) {
+      group.value = groupData
+      // Salvar como selectedGroup na store
+      groupsStore.setSelectedGroup(groupData)
+
+      if (group.value.owner_id === myProfile?.id) {
+        checkBadge.value = true
+      }
+    } else {
+      // Grupo não encontrado - lança erro FORA do try/catch
+      loading.value = false
+      return createError({
+        statusCode: 404,
+        statusMessage: 'Grupo não encontrado'
+      })
+    }
+  } catch (error) {
+    console.error('Erro ao carregar grupo:', error)
+    loading.value = false
+  }
+
+  loading.value = false
+})
+</script>
+
+<template>
+  <UContainer>
+    <UPage>
+      <UPageBody>
+        <!-- Loading state -->
+        <div v-if="loading" class="flex justify-center items-center h-64">
+          <UIcon name="i-material-symbols-progress-activity" class="w-8 h-8 animate-spin" />
+          <span class="ml-2">Carregando grupo...</span>
+        </div>
+
+        <!-- Group details -->
+        <div v-else-if="group">
+          <ui-header-page-display
+            size="big"
+            :title="group.name"
+            :description="group.description"
+            icon="i-lucide-users"
+            :badge="checkBadge"
+            badge-text="Líder"
+          />
+
+          <!-- Group info cards -->
+          <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mt-4">
+            <UCard class="border-1 py-4 dark:border-gray-800 light:border-gray-100">
+              <template #default>
+                <div class="space-y-3 align-middle content-center">
+                  <div class="flex justify-between">
+                    <div>
+                      <label class="text-sm font-bold dark:text-white">Código de Convite</label>
+                      <div class="flex items-center gap-2 mt-1">
+                        <UInput
+                          :value="group.code"
+                          :type="showCode ? 'text' : 'password'"
+                          readonly
+                          class="font-mono"
+                        />
+                        <UButton
+                          :icon="copied ? 'i-material-symbols-check' : 'i-material-symbols-content-copy-outline'"
+                          size="sm"
+                          color="neutral"
+                          variant="link"
+                          title="Copiar código"
+                          @click="copyCode"
+                        />
+                        <UButton
+                          :icon="showCode ? 'i-material-symbols-visibility-off' : 'i-material-symbols-visibility'"
+                          size="sm"
+                          color="neutral"
+                          variant="outline"
+                          :title="showCode ? 'Ocultar código' : 'Mostrar código'"
+                          @click="toggleCodeVisibility"
+                        />
+                      </div>
+                    </div>
+                    <div class="align-middle content-center">
+                      <div class="flex justify-between gap-3">
+                        <div class="text-right text-sm">
+                          <span class="text-gray-600 dark:text-gray-400">X membros</span>
+                          <p class="mt-1">
+                            Criado em: {{ new Date(group.created_at).toLocaleDateString('pt-BR') }}
+                          </p>
+                        </div>
+                        <div class="align-middle content-center">
+                          <UButton
+                            label="Ver Ranking"
+                            icon="i-lucide-users"
+                            class="px-4 py-2"
+                            color="primary"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </UCard>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 mt-10">
+            <UButton to="/home" variant="outline">
+              <UIcon name="i-material-symbols-arrow-back" class="mr-2" />
+              Voltar
+            </UButton>
+
+            <UButton color="primary">
+              <UIcon name="i-material-symbols-settings" class="mr-2" />
+              Configurações
+            </UButton>
+          </div>
+        </div>
+      </UPageBody>
+    </UPage>
+  </UContainer>
+</template>

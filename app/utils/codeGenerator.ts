@@ -17,7 +17,7 @@ const NUMBERS_CHARSET = '0123456789'
 
 /**
  * Gera um código aleatório baseado nos parâmetros especificados
- * 
+ *
  * @param options - Opções de configuração
  * @param options.length - Comprimento do código (padrão: 8)
  * @param options.includeTimestamp - Se deve incluir timestamp unix (padrão: false)
@@ -25,15 +25,15 @@ const NUMBERS_CHARSET = '0123456789'
  * @param options.charset - Conjunto de caracteres a usar (padrão: 'uppercase')
  * @param options.customChars - Caracteres personalizados (usado com charset 'custom')
  * @returns Código gerado
- * 
+ *
  * @example
  * // Código simples de 8 caracteres
  * generateCode() // "A7B9C2D4"
- * 
+ *
  * @example
  * // Código com 6 caracteres incluindo timestamp
  * generateCode({ length: 6, includeTimestamp: true }) // "A7B9-1734123456"
- * 
+ *
  * @example
  * // Código com prefixo personalizado
  * generateCode({ length: 4, prefix: 'GRP' }) // "GRP-A7B9"
@@ -74,13 +74,13 @@ export function generateCode(options: GenerateCodeOptions = {}): string {
 
   // Constrói o código final
   let code = ''
-  
+
   if (prefix) {
     code += prefix + '-'
   }
-  
+
   code += randomPart
-  
+
   if (includeTimestamp) {
     const timestamp = Math.floor(Date.now() / 1000) // Unix timestamp em segundos
     code += '-' + timestamp.toString()
@@ -91,10 +91,10 @@ export function generateCode(options: GenerateCodeOptions = {}): string {
 
 /**
  * Gera um código específico para grupos com configurações otimizadas
- * 
+ *
  * @param options - Opções de configuração (usa defaults otimizados para grupos)
  * @returns Código do grupo
- * 
+ *
  * @example
  * generateGroupCode() // "AB7C9D2E"
  * generateGroupCode({ includeTimestamp: true }) // "AB7C9D2E-1734123456"
@@ -110,10 +110,10 @@ export function generateGroupCode(options: Omit<GenerateCodeOptions, 'charset' |
 /**
  * Gera um código curto baseado principalmente em timestamp
  * Útil quando você quer códigos mais previsíveis temporalmente
- * 
+ *
  * @param extraLength - Caracteres aleatórios extras além do timestamp (padrão: 2)
  * @returns Código baseado em timestamp
- * 
+ *
  * @example
  * generateTimestampCode() // "1734123456AB"
  * generateTimestampCode(4) // "1734123456ABCD"

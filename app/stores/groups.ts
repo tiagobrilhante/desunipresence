@@ -7,6 +7,7 @@ export const useGroupsStore = defineStore(
   () => {
     // State
     const items = ref<Record<string, Group>>({})
+    const selectedGroup = ref<Group | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -36,7 +37,7 @@ export const useGroupsStore = defineStore(
 
     const setGroups = (groups: Group[]) => {
       const newItems: Record<string, Group> = {}
-      groups.forEach(group => {
+      groups.forEach((group) => {
         newItems[group.id] = group
       })
       items.value = { ...items.value, ...newItems }
@@ -53,23 +54,32 @@ export const useGroupsStore = defineStore(
     }
 
     const clearUserGroups = (userId: string) => {
-      Object.keys(items.value).forEach(groupId => {
+      Object.keys(items.value).forEach((groupId) => {
         if (items.value[groupId]?.owner_id === userId) {
           delete items.value[groupId]
         }
       })
     }
 
+    const setSelectedGroup = (group: Group | null) => {
+      selectedGroup.value = group
+    }
+
+    const clearSelectedGroup = () => {
+      selectedGroup.value = null
+    }
+
     return {
       // State
       items,
+      selectedGroup,
       loading,
       error,
-      
+
       // Getters
       getGroup,
       getUserGroups,
-      
+
       // Mutations (apenas alterações de estado)
       setError,
       setLoading,
@@ -77,7 +87,9 @@ export const useGroupsStore = defineStore(
       setGroups,
       removeGroup,
       clearAll,
-      clearUserGroups
+      clearUserGroups,
+      setSelectedGroup,
+      clearSelectedGroup
     }
   },
   {

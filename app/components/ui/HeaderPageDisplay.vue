@@ -1,9 +1,16 @@
 <script lang="ts" setup>
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   title: string
-  description?: string
+  description?: string | null
   icon: string
-}>()
+  size?: 'small' | 'big'
+  badge?: boolean
+  badgeText?: string
+}>(), {
+  size: 'small',
+  badge: false,
+  description: ''
+})
 </script>
 
 <template>
@@ -14,8 +21,16 @@ const props = defineProps<{
           <UIcon :name="props.icon" class="text-black" size="1.3rem" />
         </div>
         <div>
-          <h2 class="text-2xl font-bold">
-            {{ props.title }}
+          <h2 :class="size === 'big' ? 'text-4xl' : 'text-2xl'" class="font-bold">
+            {{ props.title }}    <UBadge
+              v-if="badge"
+              color="secondary"
+              variant="solid"
+              class="rounded-2xl"
+              icon="i-material-symbols-light-crown-outline-rounded"
+              :size="size === 'big' ? 'md' : 'sm'"
+              :label="badgeText"
+            />
           </h2>
           <p class=" text-gray-400">
             {{ props.description }}

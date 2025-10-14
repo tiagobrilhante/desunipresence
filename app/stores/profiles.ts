@@ -5,29 +5,73 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 export const useProfilesStore = defineStore(
   'profiles',
   () => {
-    // State
-    const items = ref<Record<string, Profile>>({})
+    // State - Separação clara entre meu perfil e outros perfis
+    const myProfile = ref<Profile | null>(null)
+    const otherProfiles = ref<Record<string, Profile>>({})
     const loading = ref(false)
     const error = ref<string | null>(null)
 
     // Getters
+    const getMyProfile = () => {
+      return myProfile.value
+    }
+
     const getProfile = (id?: string | null) => {
       if (!id) return null
-      return items.value[id] ?? null
+
+      // Verifica se é meu perfil primeiro
+      if (myProfile.value?.id === id) {
+        return myProfile.value
+      }
+
+      // Senão, busca nos outros perfis
+      return otherProfiles.value[id] ?? null
     }
 
     const getProfileByUsername = (username?: string | null) => {
       if (!username) return null
-      return Object.values(items.value).find(profile => profile.username === username) ?? null
+
+      // Verifica se é meu perfil primeiro
+      if (myProfile.value?.username === username) {
+        return myProfile.value
+      }
+
+      // Senão, busca nos outros perfis
+      return Object.values(otherProfiles.value).find(profile => profile.username === username) ?? null
     }
 
     const getProfilesByIds = (ids: string[]) => {
-      return ids.map(id => items.value[id]).filter(Boolean) as Profile[]
+      const profiles: Profile[] = []
+
+      ids.forEach((id) => {
+        if (myProfile.value?.id === id) {
+          profiles.push(myProfile.value)
+        } else if (otherProfiles.value[id]) {
+          profiles.push(otherProfiles.value[id])
+        }
+      })
+
+      return profiles
     }
 
     const getProfilesByOrganization = (organizationId?: string | null) => {
       if (!organizationId) return []
-      return Object.values(items.value).filter(profile => profile.organization_id === organizationId)
+
+      const profiles: Profile[] = []
+
+      // Verifica meu perfil
+      if (myProfile.value?.organization_id === organizationId) {
+        profiles.push(myProfile.value)
+      }
+
+      // Adiciona outros perfis da mesma organização
+      Object.values(otherProfiles.value).forEach((profile) => {
+        if (profile.organization_id === organizationId) {
+          profiles.push(profile)
+        }
+      })
+
+      return profiles
     }
 
     // Mutations (ações básicas de estado)
@@ -39,68 +83,100 @@ export const useProfilesStore = defineStore(
       loading.value = isLoading
     }
 
+    const setMyProfile = (profile: Profile | null) => {
+      myProfile.value = profile
+    }
+
     const setProfile = (profile: Profile) => {
-      items.value[profile.id] = profile
+      // Se for meu perfil, salva separadamente
+      if (myProfile.value?.id === profile.id) {
+        myProfile.value = profile
+      } else {
+        // Senão, salva nos outros perfis
+        otherProfiles.value[profile.id] = profile
+      }
     }
 
     const setProfiles = (profiles: Profile[]) => {
-      const newItems: Record<string, Profile> = {}
-      profiles.forEach(profile => {
-        newItems[profile.id] = profile
+      profiles.forEach((profile) => {
+        // Se for meu perfil, não adiciona aos outros
+        if (myProfile.value?.id !== profile.id) {
+          otherProfiles.value[profile.id] = profile
+        }
       })
-      items.value = { ...items.value, ...newItems }
+    }
+
+    const updateMyProfile = (updates: Partial<Profile>) => {
+      if (myProfile.value) {
+        myProfile.value = { ...myProfile.value, ...updates }
+      }
     }
 
     const updateProfile = (id: string, updates: Partial<Profile>) => {
-      if (items.value[id]) {
-        items.value[id] = { ...items.value[id], ...updates }
+      if (myProfile.value?.id === id) {
+        updateMyProfile(updates)
+      } else if (otherProfiles.value[id]) {
+        otherProfiles.value[id] = { ...otherProfiles.value[id], ...updates }
       }
     }
 
     const removeProfile = (id: string) => {
-      delete items.value[id]
+      // Não permite remover meu próprio perfil
+      if (myProfile.value?.id !== id) {
+        delete otherProfiles.value[id]
+      }
     }
 
     const clearAll = () => {
-      items.value = {}
+      myProfile.value = null
+      otherProfiles.value = {}
       error.value = null
       loading.value = false
     }
 
+    const clearOtherProfiles = () => {
+      otherProfiles.value = {}
+    }
+
     const clearOrganizationProfiles = (organizationId: string) => {
-      Object.keys(items.value).forEach(profileId => {
-        if (items.value[profileId]?.organization_id === organizationId) {
-          delete items.value[profileId]
+      Object.keys(otherProfiles.value).forEach((profileId) => {
+        if (otherProfiles.value[profileId]?.organization_id === organizationId) {
+          delete otherProfiles.value[profileId]
         }
       })
     }
 
     return {
       // State
-      items,
+      myProfile,
+      otherProfiles,
       loading,
       error,
-      
+
       // Getters
+      getMyProfile,
       getProfile,
       getProfileByUsername,
       getProfilesByIds,
       getProfilesByOrganization,
-      
+
       // Mutations (apenas alterações de estado)
       setError,
       setLoading,
+      setMyProfile,
       setProfile,
       setProfiles,
+      updateMyProfile,
       updateProfile,
       removeProfile,
       clearAll,
+      clearOtherProfiles,
       clearOrganizationProfiles
     }
   },
   {
     persist: {
-      pick: ['items']
+      pick: ['myProfile', 'otherProfiles']
     }
   }
 )

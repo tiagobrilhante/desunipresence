@@ -19,8 +19,8 @@ export const validatePassword = (password: string) => {
 
   if (password.length <= 5) errors.push('A senha deve ter ao menos 6 caracteres')
 
-  /*if (!password.includes('@'))
-    errors.push('Password must include special characters')*/
+  /* if (!password.includes('@'))
+    errors.push('Password must include special characters') */
 
   return errors
 }

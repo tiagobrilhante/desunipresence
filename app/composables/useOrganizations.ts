@@ -19,13 +19,13 @@ export const useOrganizations = () => {
     try {
       organizationsStore.setLoading(true)
       organizationsStore.setError(null)
-      
+
       const data = await organizationService.getOrganizationById(id)
-      
+
       if (data) {
         organizationsStore.setOrganization(data)
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar organização'
@@ -42,13 +42,13 @@ export const useOrganizations = () => {
     try {
       organizationsStore.setLoading(true)
       organizationsStore.setError(null)
-      
+
       const data = await organizationService.getUserOrganization(userId)
-      
+
       if (data) {
         organizationsStore.setOrganization(data)
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar organização do usuário'
@@ -65,14 +65,14 @@ export const useOrganizations = () => {
     try {
       organizationsStore.setLoading(true)
       organizationsStore.setError(null)
-      
+
       const data = await organizationService.createOrganization(organizationData)
-      
+
       if (data) {
         organizationsStore.setOrganization(data)
         // TODO: Aqui podemos adicionar notificações, logs, etc.
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao criar organização'
@@ -89,14 +89,14 @@ export const useOrganizations = () => {
     try {
       organizationsStore.setLoading(true)
       organizationsStore.setError(null)
-      
+
       const data = await organizationService.updateOrganization(id, organizationData)
-      
+
       if (data) {
         organizationsStore.setOrganization(data)
         // TODO: Adicionar notificação de sucesso
       }
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar organização'
@@ -113,12 +113,12 @@ export const useOrganizations = () => {
     try {
       organizationsStore.setLoading(true)
       organizationsStore.setError(null)
-      
+
       await organizationService.deleteOrganization(id)
-      
+
       organizationsStore.removeOrganization(id)
       // TODO: Adicionar notificação de sucesso
-      
+
       return true
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao deletar organização'
@@ -135,11 +135,11 @@ export const useOrganizations = () => {
     try {
       organizationsStore.setLoading(true)
       organizationsStore.setError(null)
-      
+
       const data = await organizationService.getOrganizationMembers(organizationId)
-      
+
       // TODO: Aqui podemos armazenar em uma store separada para membros se necessário
-      
+
       return data
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar membros da organização'
@@ -167,12 +167,12 @@ export const useOrganizations = () => {
     deleteOrganization,
     fetchOrganizationMembers,
     refreshOrganization,
-    
+
     // State (readonly)
     organizations: organizationsStore.items,
     loading: organizationsStore.loading,
     error: organizationsStore.error,
-    
+
     // Getters
     getOrganization: organizationsStore.getOrganization
   }

@@ -5,8 +5,9 @@ const user = useSupabaseUser()
 const profilesStore = useProfilesStore()
 
 // Buscar perfil do usuário atual
+const { getMyProfile } = useProfile()
 const currentProfile = computed(() => {
-  return user.value?.id ? profilesStore.getProfile(user.value.id) : null
+  return getMyProfile()
 })
 
 const userInitials = computed(() => {

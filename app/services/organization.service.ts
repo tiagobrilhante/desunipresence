@@ -73,7 +73,7 @@ export class OrganizationService {
 
   async getUserOrganization(userId?: string) {
     let currentUserId = userId
-    
+
     if (!currentUserId) {
       // Obter usuário atual do Supabase diretamente
       const { data: { user } } = await this.supabase.auth.getUser()
@@ -94,7 +94,7 @@ export class OrganizationService {
       .single()
 
     if (error) throwServiceError('OrganizationService.getUserOrganization', error)
-    
+
     return data?.organizations || null
   }
 

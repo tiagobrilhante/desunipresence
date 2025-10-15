@@ -19,6 +19,11 @@ const delay = ref(1)
 const form = ref()
 const submitting = ref(false)
 
+// Estado do modal de confirmação de exclusão
+const deleteModalOpen = ref(false)
+const sessionToDelete = ref<{ id: string, name: string } | null>(null)
+const deleting = ref(false)
+
 // Schema de validação
 const schema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome muito longo'),
@@ -191,37 +196,59 @@ const getSessionActions = (session: { id: string, name: string }) => {
       type: 'label'
     }], [
     {
-      label: 'Excluir',
+      label: 'Deletar Sessão',
       icon: 'i-material-symbols-delete',
-      click: () => confirmDeleteSession(session)
+      onSelect: () => confirmDeleteSession(session)
     }
   ]]
 }
 
-// Confirmar e deletar sessão
-const confirmDeleteSession = async (session: { id: string, name: string }) => {
-  if (confirm(`Tem certeza que deseja excluir a sessão "${session.name}"?`)) {
-    try {
-      await deleteSession(session.id)
+// Abrir modal de confirmação de exclusão
+const confirmDeleteSession = (session: { id: string, name: string }) => {
+  console.log('confirmDeleteSession chamada com:', session)
+  sessionToDelete.value = session
+  deleteModalOpen.value = true
+  console.log('Modal aberto:', deleteModalOpen.value)
+}
 
-      toast.add({
-        title: 'Sessão excluída!',
-        description: `A sessão "${session.name}" foi excluída com sucesso.`,
-        color: 'primary'
-      })
+// Executar exclusão da sessão
+const executeDeleteSession = async () => {
+  if (!sessionToDelete.value) return
 
-      // Refresh das sessões
-      if (groupId.value) {
-        await fetchSessionsByGroup(groupId.value, true)
-      }
-    } catch (error) {
-      toast.add({
-        title: 'Erro ao excluir sessão',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        color: 'error'
-      })
+  try {
+    deleting.value = true
+
+    await deleteSession(sessionToDelete.value.id)
+
+    toast.add({
+      title: 'Sessão excluída!',
+      description: `A sessão "${sessionToDelete.value.name}" foi excluída com sucesso.`,
+      color: 'primary'
+    })
+
+    // Fechar modal e limpar estado
+    deleteModalOpen.value = false
+    sessionToDelete.value = null
+
+    // Refresh das sessões
+    if (groupId.value) {
+      await fetchSessionsByGroup(groupId.value, true)
     }
+  } catch (error) {
+    toast.add({
+      title: 'Erro ao excluir sessão',
+      description: error instanceof Error ? error.message : 'Erro desconhecido',
+      color: 'error'
+    })
+  } finally {
+    deleting.value = false
   }
+}
+
+// Cancelar exclusão
+const cancelDeleteSession = () => {
+  deleteModalOpen.value = false
+  sessionToDelete.value = null
 }
 </script>
 
@@ -434,6 +461,57 @@ const confirmDeleteSession = async (session: { id: string, name: string }) => {
             :loading="submitting"
             :disabled="!name.trim() || delay < 1 || submitting"
             @click="form?.submit()"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <UModal
+      v-model:open="deleteModalOpen"
+      title="Confirmar Exclusão"
+      :ui="{
+        overlay: 'bg-stone-950/75',
+        content: 'max-w-md'
+      }"
+    >
+      <template #body>
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center gap-3">
+            <div class="flex-shrink-0">
+              <UIcon
+                name="i-material-symbols-warning"
+                class="w-8 h-8 text-red-500"
+              />
+            </div>
+            <div class="flex-1">
+              <p class="text-gray-900 dark:text-gray-100 font-medium">
+                Tem certeza que deseja excluir esta sessão?
+              </p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                A sessão "<strong>{{ sessionToDelete?.name }}</strong>" será excluída permanentemente. Esta ação não pode ser desfeita.
+              </p>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-3 w-full">
+          <UButton
+            variant="outline"
+            color="neutral"
+            label="Cancelar"
+            class="px-5"
+            :disabled="deleting"
+            @click="cancelDeleteSession"
+          />
+          <UButton
+            color="error"
+            label="Excluir Sessão"
+            class="px-5"
+            :loading="deleting"
+            :disabled="deleting"
+            @click="executeDeleteSession"
           />
         </div>
       </template>

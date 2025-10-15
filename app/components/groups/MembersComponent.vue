@@ -116,10 +116,14 @@ function getRowItems(row: Row<Members>) {
       type: 'separator'
     },
     {
-      label: 'Ajustar Pontos'
+      label: 'Ajustar Pontos',
+      icon: 'i-material-symbols-sports-score',
+      color: 'secondary'
     },
     {
-      label: 'Expulsar Membro'
+      label: 'Expulsar Membro',
+      icon: 'i-lucide-ban',
+      color: 'error'
     }
   ]
 }

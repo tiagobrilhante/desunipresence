@@ -22,8 +22,15 @@ const loading = ref(true)
 const checkBadge = ref(false)
 const showCode = ref(false)
 const copied = ref(false)
+const activeTab = ref('secao')
 
 const { myProfile } = useProfile()
+
+const handleTabClick = (tab: string, event: Event) => {
+  activeTab.value = tab
+  const target = event.target as HTMLElement
+  target.focus()
+}
 
 // Função para copiar código
 const copyCode = async () => {
@@ -55,6 +62,22 @@ const copyCode = async () => {
 const toggleCodeVisibility = () => {
   showCode.value = !showCode.value
 }
+
+const items = ref([
+  [
+    {
+      label: 'Configurações do Grupo',
+      type: 'label'
+    }
+  ],
+  [
+    {
+      label: 'Excluir Grupo',
+      icon: 'i-lucide-trash'
+    }
+  ]
+
+])
 
 onMounted(async () => {
   try {
@@ -98,14 +121,50 @@ onMounted(async () => {
 
         <!-- Group details -->
         <div v-else-if="group">
-          <ui-header-page-display
-            size="big"
-            :title="group.name"
-            :description="group.description"
-            icon="i-lucide-users"
-            :badge="checkBadge"
-            badge-text="Líder"
-          />
+          <div class="flex items-center justify-between w-full">
+            <ui-header-page-display
+              size="big"
+              :title="group.name"
+              :description="group.description"
+              icon="i-lucide-users"
+              :badge="checkBadge"
+              badge-text="Líder"
+            />
+
+            <UTooltip
+              arrow
+              :delay-duration="0"
+              text="Configurações do Grupo"
+              :content="{
+                align: 'center',
+                side: 'top'
+              }"
+              :ui="{
+                content: 'bg-primary text-black rounded-xl p-4',
+                arrow: 'fill-green-400'
+              }"
+            >
+              <UDropdownMenu
+                :items="items"
+                :content="{
+                  align: 'end',
+                  side: 'bottom',
+                  sideOffset: 8
+                }"
+                :ui="{
+                  content: 'w-48 dark:bg-neutral-900'
+
+                }"
+              >
+                <UButton
+                  variant="subtle"
+                  color="neutral"
+                  icon="i-bx-dots-vertical-rounded"
+                  size="lg"
+                />
+              </UDropdownMenu>
+            </UTooltip>
+          </div>
 
           <!-- Group info cards -->
           <div class="grid grid-cols-1 md:grid-cols-1 gap-6 mt-4">
@@ -164,17 +223,43 @@ onMounted(async () => {
             </UCard>
           </div>
 
-          <!-- Actions -->
-          <div class="flex gap-3 mt-10">
-            <UButton to="/home" variant="outline">
-              <UIcon name="i-material-symbols-arrow-back" class="mr-2" />
-              Voltar
-            </UButton>
+          <div class="flex mt-8 w-full">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              label="Seção"
+              :class="[
+                'flex-1 rounded-r-none justify-center',
+                activeTab === 'secao' ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white' : ''
+              ]"
+              @click="handleTabClick('secao', $event)"
+            />
+            <UButton
+              color="neutral"
+              variant="subtle"
+              label="Membros"
+              :class="[
+                'flex-1 rounded-none border-l-0 justify-center',
+                activeTab === 'membros' ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white' : ''
+              ]"
+              @click="handleTabClick('membros', $event)"
+            />
+            <UButton
+              color="neutral"
+              variant="subtle"
+              label="Histórico"
+              :class="[
+                'flex-1 rounded-l-none border-l-0 justify-center',
+                activeTab === 'historico' ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-white' : ''
+              ]"
+              @click="handleTabClick('historico', $event)"
+            />
+          </div>
 
-            <UButton color="primary">
-              <UIcon name="i-material-symbols-settings" class="mr-2" />
-              Configurações
-            </UButton>
+          <div class="mt-1 w-full h-96">
+            <groups-session-component v-if="activeTab === 'secao'" />
+            <groups-members-component v-if="activeTab === 'membros'" />
+            <groups-historic-component v-if="activeTab === 'historico'" />
           </div>
         </div>
       </UPageBody>

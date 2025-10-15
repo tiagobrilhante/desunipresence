@@ -8,7 +8,7 @@ definePageMeta({
 
 const route = useRoute()
 const groupsStore = useGroupsStore()
-const { fetchGroup } = useGroups()
+const { fetchGroup, fetchMemberCount } = useGroups()
 const toast = useToast()
 
 // Pegar o ID da URL
@@ -18,6 +18,7 @@ type Group = Database['public']['Tables']['groups']['Row']
 
 // Buscar dados do grupo
 const group = ref<Group | null>(null)
+const memberCount = ref(0)
 const loading = ref(true)
 const checkBadge = ref(false)
 const showCode = ref(false)
@@ -92,6 +93,9 @@ onMounted(async () => {
       if (group.value.owner_id === myProfile?.id) {
         checkBadge.value = true
       }
+
+      // Buscar contagem de membros
+      memberCount.value = await fetchMemberCount(groupId)
     } else {
       // Grupo não encontrado - lança erro FORA do try/catch
       loading.value = false
@@ -202,7 +206,9 @@ onMounted(async () => {
                     <div class="align-middle content-center">
                       <div class="flex justify-between gap-3">
                         <div class="text-right text-sm">
-                          <span class="text-gray-600 dark:text-gray-400">X membros</span>
+                          <span class="text-gray-600 dark:text-gray-400">
+                            {{ memberCount }} {{ memberCount === 1 ? 'membro' : 'membros' }}
+                          </span>
                           <p class="mt-1">
                             Criado em: {{ new Date(group.created_at).toLocaleDateString('pt-BR') }}
                           </p>

@@ -159,6 +159,70 @@ export const useGroups = () => {
     return await fetchGroup(id)
   }
 
+  // Buscar grupo por código
+  const findGroupByCode = async (code: string): Promise<Group | null> => {
+    try {
+      groupsStore.setLoading(true)
+      groupsStore.setError(null)
+
+      const data = await groupService.getGroupByCode(code)
+
+      if (data) {
+        groupsStore.setGroup(data)
+      }
+
+      return data
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar grupo'
+      groupsStore.setError(errorMessage)
+      console.error('Error finding group by code:', error)
+      return null
+    } finally {
+      groupsStore.setLoading(false)
+    }
+  }
+
+  // Entrar em um grupo
+  const joinGroup = async (code: string): Promise<GroupMembership | null> => {
+    try {
+      groupsStore.setLoading(true)
+      groupsStore.setError(null)
+
+      // Primeiro busca o grupo pelo código
+      const group = await groupService.getGroupByCode(code)
+      if (!group) {
+        throw new Error('Grupo não encontrado com este código')
+      }
+
+      // Tenta entrar no grupo
+      const membership = await groupService.joinGroup(group.id)
+
+      if (membership) {
+        // Adiciona o grupo ao cache
+        groupsStore.setGroup(membership.groups)
+      }
+
+      return membership
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao entrar no grupo'
+      groupsStore.setError(errorMessage)
+      console.error('Error joining group:', error)
+      throw error
+    } finally {
+      groupsStore.setLoading(false)
+    }
+  }
+
+  // Buscar contagem de membros de um grupo
+  const fetchMemberCount = async (groupId: string): Promise<number> => {
+    try {
+      return await groupService.getMemberCount(groupId)
+    } catch (error) {
+      console.error('Error fetching member count:', error)
+      return 0
+    }
+  }
+
   return {
     // Actions
     fetchUserGroups,
@@ -168,6 +232,9 @@ export const useGroups = () => {
     deleteGroup,
     refreshUserGroups,
     refreshGroup,
+    findGroupByCode,
+    joinGroup,
+    fetchMemberCount,
 
     // State (readonly)
     groups: groupsStore.items,

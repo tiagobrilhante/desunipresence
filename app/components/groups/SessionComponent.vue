@@ -6,10 +6,16 @@ import type { FormSubmitEvent, SelectItem } from '@nuxt/ui'
 const { createSession, fetchSessionsByGroup, getSessionsByGroup, deleteSession, loading } = useSessions()
 const groupsStore = useGroupsStore()
 const toast = useToast()
+const user = useSupabaseUser()
 
 // Pegar grupo selecionado da store
 const selectedGroup = computed(() => groupsStore.selectedGroup)
 const groupId = computed(() => selectedGroup.value?.id)
+
+// Verificar se o usuário atual é o dono do grupo
+const isGroupOwner = computed(() => {
+  return selectedGroup.value?.owner_id === user.value?.id
+})
 
 // Estado do modal e formulário
 const open = ref(false)
@@ -305,6 +311,7 @@ const cancelDeleteSession = () => {
         <ui-no-content
           title="Nenhuma sessão encontrada"
           description="Ainda não há sessões cadastradas para esse grupo"
+          :button="isGroupOwner"
           button-icon="i-material-symbols-add-rounded"
           button-text="Nova Sessão"
           @button-click="open = true"
@@ -323,7 +330,7 @@ const cancelDeleteSession = () => {
             Gerencie as sessões do grupo e acompanhe a participação dos membros
           </p>
         </div>
-        <div>
+        <div v-if="isGroupOwner">
           <UButton
             label="Nova Sessão"
             icon="i-material-symbols-add-rounded"

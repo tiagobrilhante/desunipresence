@@ -111,4 +111,74 @@ export class GroupService {
     if (error) throwServiceError('GroupService.getGroupById', error)
     return data
   }
+
+  async getGroupByCode(code: string) {
+    const { data, error } = await this.supabase
+      .from('groups')
+      .select('id, name, description, code, owner_id, created_at')
+      .eq('code', code)
+      .single()
+
+    if (error) throwServiceError('GroupService.getGroupByCode', error)
+    return data
+  }
+
+  async joinGroup(groupId: string, profileId?: string) {
+    let currentProfileId = profileId
+
+    if (!currentProfileId) {
+      // Obter usuário atual do Supabase diretamente
+      const { data: { user } } = await this.supabase.auth.getUser()
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+      currentProfileId = user.id
+    }
+
+    // Verificar se já não é membro do grupo
+    const { data: existingMembership } = await this.supabase
+      .from('group_profile')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('profile_id', currentProfileId)
+      .single()
+
+    if (existingMembership) {
+      throw new Error('Você já é membro deste grupo')
+    }
+
+    const { data, error } = await this.supabase
+      .from('group_profile')
+      .insert({
+        group_id: groupId,
+        profile_id: currentProfileId,
+        role: 'member'
+      })
+      .select(`
+        role,
+        joined_at,
+        groups!inner (
+          id,
+          name,
+          description,
+          code,
+          owner_id,
+          created_at
+        )
+      `)
+      .single()
+
+    if (error) throwServiceError('GroupService.joinGroup', error)
+    return data
+  }
+
+  async getMemberCount(groupId: string) {
+    const { count, error } = await this.supabase
+      .from('group_profile')
+      .select('*', { count: 'exact', head: true })
+      .eq('group_id', groupId)
+
+    if (error) throwServiceError('GroupService.getMemberCount', error)
+    return count || 0
+  }
 }

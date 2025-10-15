@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 definePageMeta({
   layout: 'authenticated'
 })
@@ -6,7 +9,20 @@ definePageMeta({
 const open = ref(false)
 const user = useSupabaseUser()
 const profilesStore = useProfilesStore()
-const { fetchUserGroups } = useGroups()
+const { fetchUserGroups, joinGroup, loading } = useGroups()
+const toast = useToast()
+
+// Estado do formulário
+const code = ref('')
+const form = ref()
+const submitting = ref(false)
+
+// Schema de validação
+const schema = z.object({
+  code: z.string().min(1, 'Código é obrigatório')
+})
+
+type Schema = z.output<typeof schema>
 
 // Buscar perfil do usuário atual
 const { getMyProfile } = useProfile()
@@ -33,6 +49,54 @@ const myGroups = ref<GroupMembership[]>([])
 onMounted(async () => {
   myGroups.value = await fetchUserGroups()
 })
+
+// Reseta os valores do formulário sempre que o modal abrir
+watch(open, (newValue) => {
+  if (newValue) {
+    code.value = ''
+  }
+})
+
+// Submissão do formulário
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  // Previne double-click
+  if (submitting.value) return
+
+  try {
+    submitting.value = true
+
+    const membership = await joinGroup(event.data.code)
+
+    if (membership) {
+      toast.add({
+        title: 'Entrada realizada com sucesso!',
+        description: `Você entrou no grupo "${membership.groups.name}".`,
+        color: 'primary',
+        ui: {
+          root: 'dark:bg-neutral-900'
+        }
+      })
+
+      // Atualizar a lista de grupos primeiro
+      myGroups.value = await fetchUserGroups()
+
+      // Fechar o modal após um pequeno delay para garantir que o toast seja visível
+      await nextTick()
+      open.value = false
+    }
+  } catch (error) {
+    toast.add({
+      title: 'Erro ao entrar no grupo',
+      description: error instanceof Error ? error.message : 'Erro desconhecido',
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
+    })
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <template>
@@ -67,18 +131,29 @@ onMounted(async () => {
               color="neutral"
               class="gap-3 py-2 px-4"
               variant="outline"
+              @click="open = true"
             >
               <b>Entrar com Código</b>
             </UButton>
 
             <template #body>
-              <UForm>
+              <UForm
+                ref="form"
+                :schema="schema"
+                :state="{ code }"
+                @submit="onSubmit"
+              >
                 <UFormField
                   label="Código do Grupo"
-                  name="name"
+                  name="code"
                   :ui="{ root: 'w-full', container: 'w-full' }"
                 >
-                  <UInput :ui="{ root: 'w-full' }" class="py-0 my-0" placeholder="Digite o código do grupo" />
+                  <UInput
+                    v-model="code"
+                    :ui="{ root: 'w-full' }"
+                    class="py-0 my-0"
+                    placeholder="Digite o código do grupo"
+                  />
                 </UFormField>
               </UForm>
             </template>
@@ -96,6 +171,9 @@ onMounted(async () => {
                 <UButton
                   class="px-5"
                   label="Entrar no Grupo"
+                  :loading="submitting"
+                  :disabled="!code.trim() || submitting"
+                  @click="form?.submit()"
                 />
               </div>
             </template>

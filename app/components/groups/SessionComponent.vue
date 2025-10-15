@@ -3,7 +3,7 @@ import * as z from 'zod'
 import type { FormSubmitEvent, SelectItem } from '@nuxt/ui'
 
 // Composables
-const { createSession, fetchSessionsByGroup, getSessionsByGroup, updateSession, deleteSession, loading } = useSessions()
+const { createSession, fetchSessionsByGroup, getSessionsByGroup, deleteSession, loading } = useSessions()
 const groupsStore = useGroupsStore()
 const toast = useToast()
 
@@ -96,7 +96,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     toast.add({
       title: 'Erro',
       description: 'Grupo não encontrado',
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
     return
   }
@@ -117,7 +120,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       toast.add({
         title: 'Sessão criada com sucesso!',
         description: `A sessão "${result.name}" foi criada.`,
-        color: 'primary'
+        color: 'primary',
+        ui: {
+          root: 'dark:bg-neutral-900'
+        }
       })
 
       // Fechar o modal
@@ -130,7 +136,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     toast.add({
       title: 'Erro ao criar sessão',
       description: error instanceof Error ? error.message : 'Erro desconhecido',
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
   } finally {
     submitting.value = false
@@ -139,29 +148,56 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 // Funções utilitárias
 
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'open': return 'Aberta'
-    case 'closed': return 'Fechada'
-    case 'pending': return 'Pendente'
-    default: return 'Desconhecido'
-  }
-}
-
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 
-// Atualizar status da sessão
+// Função para obter o texto correto baseado no status
+const getStatusActionText = (status: string) => {
+  switch (status) {
+    case 'open': return 'Início'
+    case 'closed': return 'Fim'
+    default: return 'Alterado'
+  }
+}
+
+// Atualizar status da sessão sem invalidar cache
 const updateSessionStatus = async (sessionId: string, newStatus: 'open' | 'pending' | 'closed') => {
   try {
-    await updateSession(sessionId, { status: newStatus })
+    const currentSessions = sessions.value
+    const currentSession = currentSessions.find(s => s.id === sessionId)
+
+    if (!currentSession) {
+      throw new Error('Sessão não encontrada')
+    }
+
+    // Atualiza diretamente via service sem usar o composable (para evitar invalidateCache)
+    const supabase = useSupabaseClient()
+    const { SessionService } = await import('@/services/sessions.service')
+    const sessionService = new SessionService(supabase)
+
+    const updatedSession = await sessionService.updateSession(sessionId, { status: newStatus })
+
+    // Atualiza apenas esta sessão na store sem limpar o cache
+    const sessionsStore = useSessionsStore()
+    if (updatedSession) {
+      sessionsStore.setSession(updatedSession)
+    } else {
+      // Fallback: atualiza localmente se API não retornar dados
+      sessionsStore.setSession({
+        ...currentSession,
+        status: newStatus,
+        status_changed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    }
 
     const statusLabels = {
       open: 'aberta',
@@ -172,18 +208,19 @@ const updateSessionStatus = async (sessionId: string, newStatus: 'open' | 'pendi
     toast.add({
       title: 'Status atualizado!',
       description: `Sessão ${statusLabels[newStatus]} com sucesso.`,
-      color: 'primary'
+      color: 'primary',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
-
-    // Refresh das sessões
-    if (groupId.value) {
-      await fetchSessionsByGroup(groupId.value, true)
-    }
   } catch (error) {
     toast.add({
       title: 'Erro ao atualizar status',
       description: error instanceof Error ? error.message : 'Erro desconhecido',
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
   }
 }
@@ -205,10 +242,8 @@ const getSessionActions = (session: { id: string, name: string }) => {
 
 // Abrir modal de confirmação de exclusão
 const confirmDeleteSession = (session: { id: string, name: string }) => {
-  console.log('confirmDeleteSession chamada com:', session)
   sessionToDelete.value = session
   deleteModalOpen.value = true
-  console.log('Modal aberto:', deleteModalOpen.value)
 }
 
 // Executar exclusão da sessão
@@ -223,7 +258,10 @@ const executeDeleteSession = async () => {
     toast.add({
       title: 'Sessão excluída!',
       description: `A sessão "${sessionToDelete.value.name}" foi excluída com sucesso.`,
-      color: 'primary'
+      color: 'primary',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
 
     // Fechar modal e limpar estado
@@ -238,7 +276,10 @@ const executeDeleteSession = async () => {
     toast.add({
       title: 'Erro ao excluir sessão',
       description: error instanceof Error ? error.message : 'Erro desconhecido',
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
   } finally {
     deleting.value = false
@@ -322,11 +363,9 @@ const cancelDeleteSession = () => {
                   <UIcon name="i-material-symbols-schedule" />
                   {{ session.delay }} min tolerância
                 </span>
-                <span v-if="session.status_changed_at" class="flex items-center gap-1">
-                  <UIcon name="i-material-symbols-calendar-today">
-                    Início:
-                    {{ getStatusLabel(session.status) }} em {{ formatDate(session.status_changed_at) }}
-                  </UIcon>
+                <span v-if="session.status_changed_at && session.status !=='pending'" class="flex items-center gap-1">
+                  <UIcon name="i-material-symbols-calendar-today" />
+                  {{ getStatusActionText(session.status) }}: {{ formatDate(session.status_changed_at) }}
                 </span>
               </div>
             </div>

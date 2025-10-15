@@ -32,7 +32,7 @@ export const useSessions = () => {
         return data || []
       } else {
         // Usa cache apenas se válido e não estivermos no cliente
-        return sessionsStore.getSessionsByGroup(groupId)
+        return sessionsStore.getSessionsByGroup(groupId) as Session[]
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar sessões'

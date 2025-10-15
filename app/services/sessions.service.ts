@@ -28,6 +28,7 @@ export class SessionService {
         description,
         delay,
         status,
+        status_changed_at,
         group_id,
         created_at,
         updated_at
@@ -48,6 +49,7 @@ export class SessionService {
         description,
         delay,
         status,
+        status_changed_at,
         group_id,
         created_at,
         updated_at
@@ -69,6 +71,7 @@ export class SessionService {
         description,
         delay,
         status,
+        status_changed_at,
         group_id,
         created_at,
         updated_at
@@ -90,6 +93,7 @@ export class SessionService {
         description,
         delay,
         status,
+        status_changed_at,
         group_id,
         created_at,
         updated_at
@@ -119,6 +123,7 @@ export class SessionService {
         name,
         description,
         status,
+        status_changed_at,
         delay,
         group_id,
         created_at,

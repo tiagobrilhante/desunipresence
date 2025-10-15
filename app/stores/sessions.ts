@@ -22,10 +22,10 @@ export const useSessionsStore = defineStore(
       return items.value[id] ?? null
     }
 
-    const getSessionsByGroup = (groupId?: string | null) => {
+    const getSessionsByGroup = (groupId?: string | null): Session[] => {
       if (!groupId) return []
       const sessionIds = sessionsByGroup.value[groupId] || []
-      return sessionIds.map(id => items.value[id]).filter(Boolean)
+      return sessionIds.map(id => items.value[id]).filter(Boolean) as Session[]
     }
 
     // Verifica se o cache está válido (útil para estratégia refresh)
@@ -74,7 +74,8 @@ export const useSessionsStore = defineStore(
       const session = items.value[id]
       if (session) {
         const groupId = session.group_id
-        delete items.value[id]
+        const { [id]: removedItem, ...restItems } = items.value
+        items.value = restItems
 
         // Remove do índice por grupo
         if (sessionsByGroup.value[groupId]) {
@@ -97,10 +98,13 @@ export const useSessionsStore = defineStore(
     const clearGroupSessions = (groupId: string) => {
       const sessionIds = sessionsByGroup.value[groupId] || []
       sessionIds.forEach((sessionId) => {
-        delete items.value[sessionId]
+        const { [sessionId]: removedItem, ...restItems } = items.value
+        items.value = restItems
       })
-      delete sessionsByGroup.value[groupId]
-      delete lastFetch.value[groupId]
+      const { [groupId]: removedGroup, ...restGroups } = sessionsByGroup.value
+      sessionsByGroup.value = restGroups
+      const { [groupId]: removedFetch, ...restFetch } = lastFetch.value
+      lastFetch.value = restFetch
     }
 
     const setSelectedSession = (session: Session | null) => {
@@ -113,8 +117,38 @@ export const useSessionsStore = defineStore(
 
     // Força refresh removendo do cache (estratégia fresh)
     const invalidateGroupCache = (groupId: string) => {
-      delete lastFetch.value[groupId]
+      const { [groupId]: removedFetch, ...restFetch } = lastFetch.value
+      lastFetch.value = restFetch
       clearGroupSessions(groupId)
+    }
+
+    // Atualização otimística - atualiza UI imediatamente
+    const updateSessionOptimistic = (sessionId: string, updates: Partial<Session>) => {
+      const existingSession = items.value[sessionId]
+      if (existingSession) {
+        items.value[sessionId] = {
+          ...existingSession,
+          ...updates,
+          updated_at: new Date().toISOString()
+        }
+      }
+    }
+
+    // Sincroniza uma sessão específica com o servidor
+    const syncSingleSession = async (sessionId: string) => {
+      try {
+        const supabase = useSupabaseClient()
+        const { SessionService } = await import('@/services/sessions.service')
+        const sessionService = new SessionService(supabase)
+
+        const updatedSession = await sessionService.getSessionById(sessionId)
+        if (updatedSession) {
+          setSession(updatedSession)
+        }
+      } catch (error) {
+        console.error('Erro ao sincronizar sessão:', error)
+        // Em caso de erro, pode forçar um refresh completo se necessário
+      }
     }
 
     return {
@@ -141,7 +175,9 @@ export const useSessionsStore = defineStore(
       clearGroupSessions,
       setSelectedSession,
       clearSelectedSession,
-      invalidateGroupCache
+      invalidateGroupCache,
+      updateSessionOptimistic,
+      syncSingleSession
     }
   }
   // Note: SEM persistência - dados ficam apenas em memória para serem sempre fresh

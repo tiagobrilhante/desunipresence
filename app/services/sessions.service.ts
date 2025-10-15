@@ -13,6 +13,7 @@ interface UpdateSessionData {
   name?: string
   description?: string | null
   delay?: number
+  status?: 'open' | 'pending' | 'closed'
 }
 
 export class SessionService {
@@ -26,6 +27,7 @@ export class SessionService {
         name,
         description,
         delay,
+        status,
         group_id,
         created_at,
         updated_at
@@ -45,6 +47,7 @@ export class SessionService {
         name,
         description,
         delay,
+        status,
         group_id,
         created_at,
         updated_at
@@ -65,6 +68,7 @@ export class SessionService {
         name,
         description,
         delay,
+        status,
         group_id,
         created_at,
         updated_at
@@ -85,6 +89,7 @@ export class SessionService {
         name,
         description,
         delay,
+        status,
         group_id,
         created_at,
         updated_at
@@ -113,6 +118,7 @@ export class SessionService {
         id,
         name,
         description,
+        status,
         delay,
         group_id,
         created_at,

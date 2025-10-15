@@ -69,7 +69,10 @@ async function handleProviderLogin(provider: Provider) {
     toast.add({
       title: 'Não foi possível criar conta',
       description: error.message,
-      color: 'red'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
   }
 }
@@ -81,7 +84,10 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     toast.add({
       title: 'Erro ao criar conta',
       description: error.message,
-      color: 'red'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
     return
   }
@@ -89,7 +95,10 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   toast.add({
     title: 'Conta criada com sucesso!',
     description: 'Bem-vindo ao sistema.',
-    color: 'green'
+    color: 'primary',
+    ui: {
+      root: 'dark:bg-neutral-900'
+    }
   })
 
   await navigateTo('/home')

@@ -38,7 +38,10 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       toast.add({
         title: 'Grupo criado com sucesso!',
         description: `O grupo "${newGroup.name}" foi criado. Código: ${newGroup.code}`,
-        color: 'primary'
+        color: 'primary',
+        ui: {
+          root: 'dark:bg-neutral-900'
+        }
       })
 
       // Navegar para a página do grupo ou dashboard
@@ -49,7 +52,10 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     toast.add({
       title: 'Erro ao criar grupo',
       description: err instanceof Error ? err.message : 'Ocorreu um erro inesperado',
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
   }
 }

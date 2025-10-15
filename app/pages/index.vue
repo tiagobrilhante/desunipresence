@@ -46,7 +46,10 @@ async function handleProviderLogin(provider: Provider) {
     toast.add({
       title: 'Não foi possível entrar',
       description: error.message,
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
   }
 }
@@ -58,7 +61,10 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     toast.add({
       title: 'Credenciais inválidas',
       description: error.message,
-      color: 'error'
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
     })
     return
   }
@@ -66,7 +72,10 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   toast.add({
     title: 'Bem-vindo(a) de volta!',
     description: 'Login realizado com sucesso.',
-    color: 'primary'
+    color: 'primary',
+    ui: {
+      root: 'dark:bg-neutral-900'
+    }
   })
 
   await navigateTo('/home')

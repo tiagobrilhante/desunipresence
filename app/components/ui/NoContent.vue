@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   title?: string
   description?: string | null
   icon?: string
@@ -14,10 +14,21 @@ withDefaults(defineProps<{
   size: 'small',
   button: true,
   buttonText: 'Criar Grupo',
-  to: '/groups/create',
   description: 'Crie o seu Primeiro grupo ou entre em um grupo existente para começar',
   buttonIcon: ''
 })
+
+const emit = defineEmits<{
+  buttonClick: []
+}>()
+
+const handleButtonClick = () => {
+  // Se não tem 'to' definido, emite evento para o componente pai
+  if (!props.to) {
+    emit('buttonClick')
+  }
+  // Se tem 'to', o UButton vai navegar automaticamente
+}
 </script>
 
 <template>
@@ -33,10 +44,11 @@ withDefaults(defineProps<{
     <UButton
       v-if="button"
       :label="buttonText"
-      :to
+      :to="to || undefined"
       :icon="buttonIcon"
       class="mt-5 px-4 py-2"
       color="primary"
+      @click="handleButtonClick"
     />
   </UContainer>
 </template>

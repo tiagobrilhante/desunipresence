@@ -149,7 +149,7 @@ onMounted(async () => {
           </UCard>
         </UPageColumns>
 
-        <ui-no-content v-else />
+        <ui-no-content v-else to="/groups/create" />
       </UPageBody>
     </UPage>
   </UContainer>

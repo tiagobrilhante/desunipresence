@@ -45,9 +45,14 @@ type GroupMembership = {
 }
 
 const myGroups = ref<GroupMembership[]>([])
+const loadingGroups = ref(true)
 
 onMounted(async () => {
-  myGroups.value = await fetchUserGroups()
+  try {
+    myGroups.value = await fetchUserGroups()
+  } finally {
+    loadingGroups.value = false
+  }
 })
 
 // Reseta os valores do formulário sempre que o modal abrir
@@ -188,7 +193,33 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           <strong>Meus Grupos</strong>
         </h2>
 
-        <UPageColumns v-if="myGroups.length > 0" :columns="2" class="gap-4">
+        <!-- Skeleton Loading -->
+        <UPageColumns v-if="loadingGroups" :columns="3" class="gap-4">
+          <UCard
+            v-for="i in 3"
+            :key="i"
+            variant="soft"
+            class="dark:bg-[#171717]"
+          >
+            <template #header>
+              <div class="flex items-center justify-between mb-2">
+                <USkeleton class="h-8 w-40" />
+                <USkeleton class="h-6 w-16 rounded-full" />
+              </div>
+              <USkeleton class="h-32 w-full" />
+            </template>
+
+            <template #footer>
+              <div class="flex items-center justify-between">
+                <USkeleton class="h-4 w-24" />
+                <USkeleton class="h-8 w-16" />
+              </div>
+            </template>
+          </UCard>
+        </UPageColumns>
+
+        <!-- Grupos Carregados -->
+        <UPageColumns v-else-if="myGroups.length > 0" :columns="2" class="gap-4">
           <UCard
             v-for="membership in myGroups"
             :key="membership.groups.id"
@@ -227,6 +258,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </UCard>
         </UPageColumns>
 
+        <!-- Sem Grupos -->
         <ui-no-content v-else to="/groups/create" />
       </UPageBody>
     </UPage>

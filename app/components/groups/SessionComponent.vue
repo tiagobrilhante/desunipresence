@@ -380,7 +380,8 @@ const cancelDeleteSession = () => {
             </div>
 
             <USeparator class="pt-4" />
-            <div class="flex flex-1 items-center gap-3 justify-end mt-3">
+
+            <div v-if="isGroupOwner" class="flex flex-1 items-center gap-3 justify-end mt-3">
               <USelect
                 v-model="session.status"
                 :items="status_items"
@@ -425,6 +426,32 @@ const cancelDeleteSession = () => {
                   size="sm"
                 />
               </UDropdownMenu>
+            </div>
+
+            <div v-else class="flex flex-1 items-center gap-3 justify-end mt-3">
+              <UTooltip
+                :delay-duration="0"
+                text="Quando a sessão começar você poderá fazer check-in"
+                :content="{
+                  align: 'center',
+                  side: 'top',
+                  sideOffset: 8
+                }"
+                :ui="{
+                  content: 'bg-primary text-black'
+                }"
+              >
+                <UIcon name="i-material-symbols-info-outline" class="size-5 text-neutral-500" />
+              </UTooltip>
+
+              <UButton
+                :disabled="!(session.status === 'open')"
+                label="Fazer Check-in"
+                variant="subtle"
+                class="px-5"
+                color="neutral"
+                size="sm"
+              />
             </div>
           </div>
         </template>

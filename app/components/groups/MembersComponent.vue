@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { Row } from '@tanstack/vue-table'
-import { useClipboard } from '@vueuse/core'
 
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const toast = useToast()
-const { copy } = useClipboard()
 
 type Members = {
   id: string
@@ -18,15 +15,31 @@ type Members = {
   score: number
 }
 
-const data = ref<Members[]>([
-  {
-    id: '4600',
-    name: 'Joaquim Soares',
-    date: '2024-03-11T15:30:00',
-    owner: true,
-    score: 594
+// Buscar dados reais
+const { fetchGroupMembers, getMembersByGroup } = useMembers()
+const groupsStore = useGroupsStore()
+const selectedGroup = computed(() => groupsStore.selectedGroup)
+const groupId = computed(() => selectedGroup.value?.id)
+
+// Dados da tabela
+const data = computed<Members[]>(() => {
+  if (!groupId.value) return []
+  const members = getMembersByGroup(groupId.value)
+  return members.map(member => ({
+    id: member.id,
+    name: member.profile.username || member.profile.full_name || 'Usuário sem nome',
+    date: member.joined_at,
+    owner: member.role === 'owner',
+    score: member.score
+  }))
+})
+
+// Buscar membros ao montar
+onMounted(async () => {
+  if (groupId.value) {
+    await fetchGroupMembers(groupId.value)
   }
-])
+})
 
 const columns: TableColumn<Members>[] = [
   {
@@ -37,9 +50,10 @@ const columns: TableColumn<Members>[] = [
     accessorKey: 'date',
     header: 'Data de ingresso',
     cell: ({ row }) => {
-      return new Date(row.getValue('date')).toLocaleString('en-US', {
+      return new Date(row.getValue('date')).toLocaleString('pt-BR', {
         day: 'numeric',
-        month: 'short',
+        month: '2-digit',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
@@ -79,7 +93,7 @@ const columns: TableColumn<Members>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
+    cell: () => {
       return h(
         'div',
         { class: 'text-right' },
@@ -89,7 +103,7 @@ const columns: TableColumn<Members>[] = [
             'content': {
               align: 'end'
             },
-            'items': getRowItems(row),
+            'items': getRowItems(),
             'aria-label': 'Actions dropdown'
           },
           () =>
@@ -106,7 +120,7 @@ const columns: TableColumn<Members>[] = [
   }
 ]
 
-function getRowItems(row: Row<Members>) {
+function getRowItems() {
   return [
     {
       type: 'label',
@@ -134,7 +148,6 @@ function getRowItems(row: Row<Members>) {
     variant="subtle"
     class="flex-1 mt-6 w-full rounded-2xl dark:bg-[#141414]"
   >
-    membros
     <UTable :data="data" :columns="columns" class="flex-1" />
   </UCard>
 </template>

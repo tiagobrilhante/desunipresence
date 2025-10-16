@@ -14,6 +14,11 @@ create index if not exists session_history_member_id_idx on session_history(memb
 create index if not exists session_history_by_profile_id_idx on session_history(by_profile_id);
 create index if not exists session_history_created_at_idx on session_history(created_at);
 
+-- Constraint para evitar múltiplos check-ins do mesmo usuário na mesma sessão
+create unique index session_history_unique_checkin_idx 
+on session_history(session_id, member_id) 
+where action = 'checkin';
+
 alter table session_history enable row level security;
 
 create policy "members can see session history of their groups"
@@ -29,7 +34,7 @@ using (
   )
 );
 
-create policy "owners and admins can insert session history"
+create policy "members can checkin or admins can insert for anyone"
 on session_history
 for insert
 to authenticated
@@ -39,7 +44,13 @@ with check (
     inner join group_profile gp on gp.group_id = s.group_id
     where s.id = session_history.session_id
     and gp.profile_id = auth.uid()
-    and gp.role in ('owner', 'admin')
+    and (
+      -- Membro fazendo check-in para si mesmo
+      (session_history.member_id = auth.uid() and session_history.by_profile_id = auth.uid())
+      or
+      -- Owners e admins podem fazer check-in para qualquer membro
+      (gp.role in ('owner', 'admin'))
+    )
   )
 );
 

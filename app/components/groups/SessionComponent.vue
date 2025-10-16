@@ -4,6 +4,7 @@ import type { FormSubmitEvent, SelectItem } from '@nuxt/ui'
 
 // Composables
 const { createSession, fetchSessionsByGroup, getSessionsByGroup, deleteSession, loading } = useSessions()
+const { performCheckin, loading: checkinLoading } = useSessionHistory()
 const groupsStore = useGroupsStore()
 const toast = useToast()
 const user = useSupabaseUser()
@@ -300,6 +301,50 @@ const cancelDeleteSession = () => {
   deleteModalOpen.value = false
   sessionToDelete.value = null
 }
+
+// Função para fazer check-in
+const handleCheckin = async (sessionId: string) => {
+  try {
+    const result = await performCheckin(sessionId)
+
+    if (result) {
+      toast.add({
+        title: 'Check-in realizado!',
+        description: 'Você fez check-in na sessão com sucesso.',
+        color: 'primary',
+        ui: {
+          root: 'dark:bg-neutral-900'
+        }
+      })
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+
+    // Diferentes tipos de erro com mensagens mais amigáveis
+    let title = 'Erro no check-in'
+    let description = errorMessage
+
+    if (errorMessage.includes('já fez check-in')) {
+      title = 'Check-in já realizado'
+      description = 'Você já fez check-in nesta sessão.'
+    } else if (errorMessage.includes('só é permitido em sessões abertas')) {
+      title = 'Sessão não está aberta'
+      description = 'Check-in só é permitido quando a sessão estiver aberta.'
+    } else if (errorMessage.includes('não encontrada')) {
+      title = 'Sessão não encontrada'
+      description = 'A sessão não foi encontrada ou você não tem permissão.'
+    }
+
+    toast.add({
+      title,
+      description,
+      color: 'error',
+      ui: {
+        root: 'dark:bg-neutral-900'
+      }
+    })
+  }
+}
 </script>
 
 <template>
@@ -446,11 +491,13 @@ const cancelDeleteSession = () => {
 
               <UButton
                 :disabled="!(session.status === 'open')"
+                :loading="checkinLoading"
                 label="Fazer Check-in"
                 variant="subtle"
                 class="px-5"
                 color="neutral"
                 size="sm"
+                @click="handleCheckin(session.id)"
               />
             </div>
           </div>

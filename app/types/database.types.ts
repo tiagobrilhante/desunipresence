@@ -183,6 +183,61 @@ export type Database = {
           }
         ]
       }
+      session_history: {
+        Row: {
+          action: string
+          action_description: string | null
+          by_profile_id: string
+          created_at: string
+          id: string
+          member_id: string
+          score: number
+          session_id: string
+        }
+        Insert: {
+          action: string
+          action_description?: string | null
+          by_profile_id: string
+          created_at?: string
+          id?: string
+          member_id: string
+          score?: number
+          session_id: string
+        }
+        Update: {
+          action?: string
+          action_description?: string | null
+          by_profile_id?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          score?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'session_history_by_profile_id_fkey'
+            columns: ['by_profile_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'session_history_member_id_fkey'
+            columns: ['member_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'session_history_session_id_fkey'
+            columns: ['session_id']
+            isOneToOne: false
+            referencedRelation: 'sessions'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       sessions: {
         Row: {
           created_at: string

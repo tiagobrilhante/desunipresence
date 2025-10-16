@@ -14,7 +14,7 @@ const groupId = computed(() => selectedGroup.value?.id)
 
 // Verificar se o usuário atual é o dono do grupo
 const isGroupOwner = computed(() => {
-  return selectedGroup.value?.owner_id === user.value?.id
+  return selectedGroup.value?.owner_id === user.value?.sub
 })
 
 // Estado do modal e formulário
@@ -181,7 +181,10 @@ const updateSessionStatus = async (sessionId: string, newStatus: 'open' | 'pendi
     const currentSession = currentSessions.find(s => s.id === sessionId)
 
     if (!currentSession) {
-      throw new Error('Sessão não encontrada')
+      return createError({
+        statusCode: 401,
+        statusMessage: 'Sessão não encontrada'
+      })
     }
 
     // Atualiza diretamente via service sem usar o composable (para evitar invalidateCache)
@@ -318,7 +321,6 @@ const cancelDeleteSession = () => {
         />
       </template>
     </UCard>
-
     <!-- Lista de sessões -->
     <div v-if="loading || (sessions && sessions.length > 0)" class="mt-10">
       <div class=" flex justify-between">

@@ -44,20 +44,43 @@ export class MembersService {
 
     if (error) throwServiceError('MembersService.getGroupMembers', error)
 
-    // Transformar os dados e adicionar score aleatório
-    return (data || []).map(member => ({
-      id: member.id,
-      profile_id: member.profile_id,
-      group_id: member.group_id,
-      role: member.role as 'owner' | 'admin' | 'member',
-      joined_at: member.joined_at,
-      profile: {
-        id: member.profiles.id,
-        username: member.profiles.username,
-        full_name: member.profiles.full_name
-      },
-      // Score aleatório entre 0 e 1000 por enquanto
-      score: Math.floor(Math.random() * 1001)
+    // Primeiro buscar todas as sessões do grupo
+    const { data: groupSessions } = await this.supabase
+      .from('sessions')
+      .select('id')
+      .eq('group_id', groupId)
+
+    const sessionIds = groupSessions ? groupSessions.map(s => s.id) : []
+
+    // Para cada membro, calcular a soma dos pontos do session_history
+    return await Promise.all((data || []).map(async (member) => {
+      let totalScore = 0
+
+      if (sessionIds.length > 0) {
+        const { data: scoreData, error: scoreError } = await this.supabase
+          .from('session_history')
+          .select('score')
+          .eq('member_id', member.profile_id)
+          .in('session_id', sessionIds)
+
+        if (!scoreError && scoreData) {
+          totalScore = scoreData.reduce((sum, record) => sum + (record.score || 0), 0)
+        }
+      }
+
+      return {
+        id: member.id,
+        profile_id: member.profile_id,
+        group_id: member.group_id,
+        role: member.role as 'owner' | 'admin' | 'member',
+        joined_at: member.joined_at,
+        profile: {
+          id: member.profiles.id,
+          username: member.profiles.username,
+          full_name: member.profiles.full_name
+        },
+        score: totalScore
+      }
     }))
   }
 
@@ -165,6 +188,26 @@ export class MembersService {
 
     if (!data) return null
 
+    // Calcular score real do usuário
+    // Primeiro buscar as sessões do grupo
+    const { data: groupSessions } = await this.supabase
+      .from('sessions')
+      .select('id')
+      .eq('group_id', groupId)
+
+    const sessionIds = groupSessions ? groupSessions.map(s => s.id) : []
+    let totalScore = 0
+
+    if (sessionIds.length > 0) {
+      const { data: scoreData } = await this.supabase
+        .from('session_history')
+        .select('score')
+        .eq('member_id', data.profile_id)
+        .in('session_id', sessionIds)
+
+      totalScore = scoreData ? scoreData.reduce((sum, record) => sum + (record.score || 0), 0) : 0
+    }
+
     return {
       id: data.id,
       profile_id: data.profile_id,
@@ -174,10 +217,9 @@ export class MembersService {
       profile: {
         id: data.profiles.id,
         username: data.profiles.username,
-        email: data.profiles.email
+        full_name: data.profiles.full_name
       },
-      // Score aleatório entre 0 e 1000 por enquanto
-      score: Math.floor(Math.random() * 1001)
+      score: totalScore
     }
   }
 }

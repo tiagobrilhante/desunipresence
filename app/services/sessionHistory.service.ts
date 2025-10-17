@@ -21,6 +21,10 @@ export interface SessionHistory {
     username: string | null
     full_name: string | null
   }
+  session?: {
+    id: string
+    name: string
+  }
 }
 
 export interface CreateSessionHistoryData {
@@ -206,5 +210,83 @@ export class SessionHistoryService {
       .eq('id', id)
 
     if (error) throwServiceError('SessionHistoryService.deleteSessionHistory', error)
+  }
+
+  async getGroupHistory(groupId: string, memberId?: string, sessionId?: string): Promise<SessionHistory[]> {
+    // Primeiro buscar as sessões do grupo
+    const { data: groupSessions } = await this.supabase
+      .from('sessions')
+      .select('id')
+      .eq('group_id', groupId)
+
+    const sessionIds = groupSessions ? groupSessions.map(s => s.id) : []
+
+    if (sessionIds.length === 0) return []
+
+    let query = this.supabase
+      .from('session_history')
+      .select(`
+        id,
+        created_at,
+        session_id,
+        member_id,
+        action,
+        action_description,
+        score,
+        by_profile_id,
+        member_profile:profiles!member_id (
+          id,
+          username,
+          full_name
+        ),
+        by_profile:profiles!by_profile_id (
+          id,
+          username,
+          full_name
+        ),
+        session:sessions!session_id (
+          id,
+          name
+        )
+      `)
+      .in('session_id', sessionIds)
+
+    // Filtro por membro se especificado
+    if (memberId) {
+      query = query.eq('member_id', memberId)
+    }
+
+    if (sessionId) {
+      query = query.eq('session_id', sessionId)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
+
+    if (error) throwServiceError('SessionHistoryService.getGroupHistory', error)
+
+    return (data || []).map(item => ({
+      id: item.id,
+      created_at: item.created_at,
+      session_id: item.session_id,
+      member_id: item.member_id,
+      action: item.action,
+      action_description: item.action_description,
+      score: item.score,
+      by_profile_id: item.by_profile_id,
+      member_profile: {
+        id: item.member_profile.id,
+        username: item.member_profile.username,
+        full_name: item.member_profile.full_name
+      },
+      by_profile: {
+        id: item.by_profile.id,
+        username: item.by_profile.username,
+        full_name: item.by_profile.full_name
+      },
+      session: {
+        id: item.session.id,
+        name: item.session.name
+      }
+    }))
   }
 }

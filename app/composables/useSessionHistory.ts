@@ -136,9 +136,28 @@ export const useSessionHistory = () => {
     }
   }
 
+  // Buscar histórico do grupo com filtros
+  const fetchGroupHistory = async (groupId: string, memberId?: string, sessionId?: string): Promise<SessionHistory[]> => {
+    try {
+      sessionHistoryStore.setLoading(true)
+      sessionHistoryStore.setError(null)
+
+      const data = await sessionHistoryService.getGroupHistory(groupId, memberId, sessionId)
+      return data || []
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar histórico do grupo'
+      sessionHistoryStore.setError(errorMessage)
+      console.error('Error fetching group history:', error)
+      return []
+    } finally {
+      sessionHistoryStore.setLoading(false)
+    }
+  }
+
   return {
     // Actions
     fetchSessionHistory,
+    fetchGroupHistory,
     createHistoryEntry,
     performCheckin,
     deleteHistoryEntry,
